@@ -83,11 +83,11 @@ $(document).ready(function(){
 
   function Cell(i, j, r, alive){
     ctx.beginPath();
-    ctx.arc(i, j, r, 0, 2*Math.PI);
-    ctx.strokeStyle = "#666";
+    //ctx.arc(i, j, r, 0, 2*Math.PI);
+    ctx.rect(i, j, 5, 5);
     ctx.stroke();
     if (alive){
-      ctx.fillStyle = "#ffcc00";
+      ctx.fillStyle = "#263238";
       ctx.fill();
     }
   }
