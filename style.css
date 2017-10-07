@@ -1,13 +1,17 @@
-#board{
-    width: 720px;
+body{
+    margin: 0;
+    padding: 0;
 }
-.cell{
-    border: solid;
-    border-width: 1px;
-    height: 10px;
-    width: 10px;
-    float: left;
+
+canvas{
+width: 100%;
+background-color: black;
 }
-.live{
-    background-color: red;
+
+
+div{
+  font-size: 120%;
+  max-width: 36em;
+  text-align: justify;
+  margin: 0 auto;
 }

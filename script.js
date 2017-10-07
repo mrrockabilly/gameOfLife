@@ -1,137 +1,155 @@
-
-    drawBoard();
-    var state = makeStateArr();
-
-function drawBoard() {
-    for (var i = 0; i < 60; i++) {
-        for (var j = 0; j < 60; j++) {
-            $("#board").append(`<div class="cell" loc="${js}-${i}"></div>`);
-        }
+$(document).ready(function(){
+  var width;
+  var height;
+  var grid = [];
+  var ctx;
+  var alive;
+  var intervalId;
+  var cycle;
+  
+  function checkNeighbors(i, j, xMax, yMax, isLive){
+    
+    var neighborCount = 0;
+    
+    // Check left
+    if (i - 1 >= 0){
+      neighborCount += grid[(i-1) + j*xMax];
     }
-}
-
-function makeStateArr() {
-    let arr = [];
-    for (var i = 0; i < 60; i++) {
-        let arrInner = []
-        for (var j = 0; j < 60; j++) {
-            arrInner.push(0)
-        }
-        arr.push(arrInner)
+    
+    // Check right
+    if (i + 1 <= xMax){
+      neighborCount += grid[(i+1) + j*xMax];
     }
-    return arr;
-}
-
-
-    function play(oldGrid) {
-        var newGrid = makeStateArr();
-        for (var x = 0; x < 60; x++) {
-            for (var y = 0; y < 60; y++) {
-                newGrid[x][y] = current = checkNeighbors(x, y, oldGrid);
-                if( current === 1){
-                    $(`.cell[loc=${x}-${y}]`).addClass("live")
-                }
-            }
-        }
-        return newGrid
+    
+    // Check up
+    if (j - 1 >= 0){
+      neighborCount += grid[i + (j-1)*xMax];
     }
-
-    function checkNeighbors(i, j, grid) {
-        var yMax = xMax = 59;
-        var neighborCount = 0;
-        var isLive = grid[i][j];
-
-        //Left
-        if (i - 1 >= 0) {
-            neighborCount += grid[j][(i - 1)];
-        }
-
-        //Right
-        if (i + 1 <= xMax) {
-            neighborCount += grid[j][i + 1];
-        }
-
-        //Up
-        if (j - 1 >= 0) {
-            neighborCount += grid[j - 1][i];
-        }
-
-        //Down
-        if (j + 1 <= yMax) {
-            // neighborCount += grid[j + 1][i];
-        }
-
-        //Left
-        if ((i - 1 >= 0) && (j - 1 >= 0)) {
-            neighborCount += grid[j - 1][i - 1];
-
-        }
-
-        //Right
-        if ((i + 1 <= xMax) && (j - 1 >= 0)) {
-            neighborCount += grid[j - 1][i + 1];
-        }
-
-        //LL
-        if ((i - 1 >= 0) && (j + 1 <= yMax)) {
-            neighborCount += grid[j + 1][i - 1];
-        }
-
-        //LR
-        if ((i + 1 <= xMax) && (j + 1 <= yMax)) {
-            //   neighborCount += grid[j + 1][i + 1]
-        }
-
-        if (neighborCount < 2 && isLive == 1) {
-            return 0;
-        }
-
-        else if (neighborCount == 2 && isLive == 1) {
-            return 1;
-        }
-
-        else if (neighborCount == 3 && isLive == 1) {
-            return 1;
-        }
-
-        else if (neighborCount > 3 && isLive == 1) {
-            return 0;
-        }
-
-        if ((neighborCount === 3) && (isLive === 0)) {
-            return 1;
-        }
-
-        else {
-            return 0;
-        }
-
+    
+    // Check down
+    if (j + 1 <= yMax){
+      neighborCount += grid[i + (j+1)*xMax];
+    }
+    
+    // Check upper left
+    if ( (i - 1 >= 0) && (j - 1 >= 0) ){
+      neighborCount += grid[(i-1) + (j-1)*xMax];
     }
 
-
-
-
-
-$(function () {
-    state[1][1] = state[1][2] = state[1][3] = 1
-    var plays = 0;
-
-
-    console.log("Play: ", ++plays)
-
-    for (var i = 0; i < 60; i++) {
-        for (var j = 0; j < 60; j++) {
-            if (state[i][j] === 1) {
-                $(`.cell[loc=${j}-${i}]`).addClass("live")
-            }
-        }
+    // Check upper right
+    if ( (i + 1 <= xMax) && (j - 1 >= 0) ){
+      neighborCount += grid[(i+1) + (j-1)*xMax];
     }
 
-     
+    // Check lower left
+    if ( (i - 1 >= 0) && (j + 1 <= yMax) ){
+      neighborCount += grid[(i - 1) + (j+1)*xMax];
+    }
+    
+    // Check lower right
+    if ( (i + 1 <= xMax) && (j + 1 <= yMax) ){
+      neighborCount += grid[(i + 1) + (j+1)*xMax];
+    }
+    
+    // Any live cell w/ < 2 neighbors dies
+    if ( neighborCount < 2 && isLive == 1){
+      return 0;
+    }
+    
+    // Any live cell w/ 2 or 3 neighbors lives
+    else if ( neighborCount == 2 && isLive == 1){
+      return 1;
+    }
+    
+    else if ( neighborCount == 3 && isLive == 1){
+      return 1;
+    }
+    
+    // Any live cell w/ > 3 neighbors dies
+    else if ( neighborCount > 3 && isLive == 1){
+      return 0;
+    }
+    
+    // Any dead cell w/ exactly 3 live neighbors lives
+    if ((neighborCount == 3) && (isLive == 0)){
+      return 1;
+    }
+    
+    else {
+      return 0;
+    }
 
+  }
 
+  function Cell(i, j, r, alive){
+    ctx.beginPath();
+    ctx.arc(i, j, r, 0, 2*Math.PI);
+    ctx.strokeStyle = "#666";
+    ctx.stroke();
+    if (alive){
+      ctx.fillStyle = "#ffcc00";
+      ctx.fill();
+    }
+  }
+  
+  function setupGame(xMax, yMax, r, n){
+    ctx.clearRect(0, 0, width, height);
+    for (var y = 0; y < yMax; y++){
+      for (var x = 0; x < xMax; x++){
+        alive = Math.floor(Math.random()*3);
+        alive = Math.floor(alive/2);
+        Cell(x*n+n/2, y*n+n/2, r, alive);
+        grid.push(alive);
+      }
+    }
+    cycle++;
+  }
+  
+  function printGrid(grid, xMax, yMax){
+    var printed = "";
+    for (var i = 0; i < grid.length; i++){
+      printed += grid[i];
+      if (i%yMax == 0 && i != 0){
+        printed += "<br>";
+      }
+    }
+    $("#printed").html(printed);
+  }
 
+  
+  function playGame(xMax, yMax, r, n){
+    ctx.clearRect(0, 0, width, height);
+    var gridCopy = [];
+    for (var y = 0; y < yMax; y++){
+      for (var x = 0; x < xMax; x++){
+        gridCopy[x+y*xMax] = checkNeighbors(x, y, xMax, yMax, grid[x+y*xMax]);
+        /*Cell(x*n+n/2, y*n+n/2, r, gridCopy[x+y*xMax]);*/
+      }
+    }
+    grid = gridCopy.slice(0);
+    for (var y = 0; y < yMax; y++){
+      for (var x = 0; x < xMax; x++){
+        Cell(x*n+n/2, y*n+n/2, r, grid[x+y*xMax]);
+      }
+    }
+    cycle++;
+  }
+  
+  function init(){
+    ctx = $("#canvas")[0].getContext('2d');
+    height = $("#canvas").width();
+    width = $("#canvas").height();
+    
+    // These values are the most aesthetically pleasing
+    var xMax = 75;
+    var yMax = 75;
+    var n = 6.65;
+    var r = 2;
 
-
-
+    cycle = 0;
+    setupGame(xMax, yMax, r, n);
+    intervalId = setInterval(function() {playGame(xMax, yMax, r, n)}, 75);
+  }
+  
+  init();
 });
